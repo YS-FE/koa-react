@@ -1,0 +1,38 @@
+.app {
+
+  @mixin center{
+    width: 1100px;
+    margin: 0 auto;
+  }
+
+  .header {
+    background-color: #f60;
+
+    .inner {
+      @include center;
+      height: 55px;
+      line-height: 55px;
+
+      a {
+        color: rgba(255,255,255, 0.8);
+        margin-right: 30px;
+      }
+
+      .active {
+        color: rgb(255,255,255)
+      }
+
+      .desc {
+        font-size: 20px;
+        color: #fff;
+        float: right;
+      }
+    }
+  }
+
+  .content {
+    @include center;
+    padding: 30px 0;
+  }
+
+}

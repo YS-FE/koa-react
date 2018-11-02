@@ -1,0 +1,10 @@
+@import '../common.scss';
+.top-movies {
+
+  &::before,
+  &::after {
+    @include clearfix;
+  }
+
+  @include movie-layout;
+}

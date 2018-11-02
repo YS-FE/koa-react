@@ -1,0 +1,38 @@
+@mixin clearfix {
+  content: '';
+  display: block;
+  height: 0;
+  visibility: hidden;
+  clear: both;
+}
+
+
+@mixin movie-layout {
+  .movie-item {
+    float: left;
+    width: 250px;
+    height: 320px;
+    padding: 0px 10px;
+    margin-bottom: 20px;
+    transition: all 0.2s linear;
+
+    &:hover {
+      transform: scale(1.1, 1.1);
+    }
+
+
+
+    .movie-item-inner {
+      border: 1px solid lightgrey;
+      width: 250px;
+      height: 320px;
+      border-radius: 4px;
+
+      > img {
+        width: 250px;
+        height: 320px;
+      }
+    }
+
+  }
+}
