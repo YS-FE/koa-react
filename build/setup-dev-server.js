@@ -1,8 +1,9 @@
 const path = require("path");
 const webpack = require("webpack");
 const MFS = require('memory-fs');
-const clientConfig = require("../config/webpack.config.client");
-const serverConfig = require("../config/webpack.config.server");
+const clientConfig = require("./webpack.config.client");
+const serverConfig = require("./webpack.config.server");
+const convert = require('koa-convert');
 
 module.exports = function setupDevServer(app, callback) {
   let serverEntry;
@@ -14,7 +15,7 @@ module.exports = function setupDevServer(app, callback) {
   const update = () => {
     if (serverEntry && template) {
       callback(serverEntry, template);
-      resolve(); // resolve Promise让服务端进行render
+      resolve();
     }
   }
 
@@ -22,22 +23,20 @@ module.exports = function setupDevServer(app, callback) {
     return fs.readFileSync(path.join(clientConfig.output.path, fileName), "utf-8");
   }
 
-  // 修改入口文件，增加热更新文件
+ 
   clientConfig.entry.app = ["webpack-hot-middleware/client", clientConfig.entry.app];
   clientConfig.output.filename = "static/js/[name].[hash].js";
   clientConfig.plugins.push(new webpack.HotModuleReplacementPlugin());
 
-  // 客户端打包
+
   const clientCompiler = webpack(clientConfig);
 
-  const devMiddleware = require("webpack-dev-middleware")(clientCompiler, {
+  const devMiddleware = require("koa-webpack-dev-middleware")(clientCompiler, {
     publicPath: clientConfig.output.publicPath,
     noInfo: true
   });
 
-
-  // 使用webpack-dev-middleware中间件服务webpack打包后的资源文件
-  app.use(devMiddleware);
+  app.use(convert(devMiddleware));
 
   /* eslint-disable no-console */
   clientCompiler.plugin("done", stats => {
@@ -50,19 +49,18 @@ module.exports = function setupDevServer(app, callback) {
       console.error(info.errors);
       return;
     }
-    // 从webpack-dev-middleware中间件存储的内存中读取打包后的inddex.html文件模板
     template = readFile(devMiddleware.fileSystem, "index.html");
+    devMiddleware.fileSystem.unlinkSync(path.join(clientConfig.output.path, "index.html"));
     update();
   });
 
+
   // 热更新中间件
-  app.use(require("webpack-hot-middleware")(clientCompiler));
+  app.use(convert(require("koa-webpack-hot-middleware")(clientCompiler)));
 
-  // 监视服务端打包入口文件，有更改就更新
   const serverCompiler = webpack(serverConfig);
-
   
-  // 使用内存文件系统
+  //内存文件系统
   const mfs = new MFS();
   serverCompiler.outputFileSystem = mfs;
   serverCompiler.watch({}, (err, stats) => {
