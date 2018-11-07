@@ -10,6 +10,10 @@
     "build:client": "cross-env NODE_ENV=production webpack --config build/webpack.config.client.js",
     "build:server": "cross-env NODE_ENV=production webpack --config build/webpack.config.server.js"
   },
+  "keywords": [
+    "koa",
+    "react"
+  ],
   "dependencies": {
     "axios": "^0.18.0",
     "chalk": "^2.4.1",
