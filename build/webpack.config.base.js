@@ -19,7 +19,7 @@ if (process.env.NODE_ENV === "production") {
 }
 
 const baseWebpackConfig = {
-  devtool: isProd ? "#source-map" : "#cheap-module-source-map",
+  devtool: false,
   resolve: {
     extensions: [".js", ".jsx", ".json"]
   },
@@ -55,6 +55,9 @@ const baseWebpackConfig = {
   plugins: [
     new webpack.DefinePlugin({
       "process.env": require("./" + env + ".env")
+    }),
+    new webpack.ProvidePlugin({
+      "React": "react"
     }),
     ...prodPlugins
   ]

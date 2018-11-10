@@ -1,6 +1,7 @@
 import React from "react";
-import {Provider} from 'react-redux'
-import {StaticRouter, matchPath} from 'react-router-dom'
+import Loadable from 'react-loadable';
+import {Provider} from 'react-redux';
+import {StaticRouter, matchPath} from 'react-router-dom';
 
 import App from "./client/App";
 import  generatorStore  from './client/store';
@@ -9,6 +10,7 @@ import {getTop} from './api';
 import config from '../config';
 
 const store = generatorStore();
+const isProd = process.env.NODE_ENV === "production";
 
 module.exports = async (context) => {
 
@@ -24,12 +26,12 @@ module.exports = async (context) => {
     context.state = store.getState();
   }
 
-  /**
+    /**
    * 多个路由都需要预先获取数据 参考如下代码
   
     const promises = [];
     routes.some(route => {
-      const match = matchPath(context.currURL, route);
+      const match = matchPath(req.path, route);
       if (match && route.loadData) promises.push(route.loadData(match));
       return match;
     });
@@ -45,12 +47,22 @@ module.exports = async (context) => {
     }
   */
 
+  const Content = () => {
+   return (
+   <Provider store={store}>
+      <StaticRouter location={context.srcUrl} context={context}>
+        <App />
+      </StaticRouter>
+    </Provider>)
+  };
 
-  return (
-    <Provider store={store}>
-    <StaticRouter location={context.srcUrl} context={context}>
-      <App />
-    </StaticRouter>
-    </Provider>
-  );
+  if (isProd) {
+    return (
+      <Loadable.Capture report={moduleName => context.modules.push(moduleName)}>
+        <Content/>
+      </Loadable.Capture>
+    );
+  } else {
+    return <Content/>
+  }
 }

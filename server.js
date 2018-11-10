@@ -15,6 +15,9 @@ const proxy = require('koa-proxies');
 const static = require('koa-static');
 const views = require('koa-views');
 const chalk = require('chalk');
+const Loadable = require('react-loadable');
+const { getBundles } = require('react-loadable/webpack');
+
 
 const app = new Koa()
 
@@ -29,7 +32,7 @@ Object.keys(config.proxyTables).forEach(key => {
 
 
 const isProd = process.env.NODE_ENV === "production";
-const port = process.env.PORT || 8888;
+const port = process.env.PORT || 8883;
 
 const serve = (root, cache) => static(root, {
   index: 'useless',
@@ -58,11 +61,12 @@ let template;
 let readyPromise;
 
 if (isProd) {
+  loadableJson = require('./dist/react-loadable.json');
   serverEntry = require("./dist/entry-server");
   app.use(views(path.resolve(__dirname, './dist'), {map: {html: 'ejs'}}));
+  
 } else {
   app.use(views(path.resolve(__dirname, './temp'), {map: {html: 'ejs'}}));
-
   readyPromise = require("./build/setup-dev-server")(app, (entry, htmlTemplate) => {
     serverEntry = entry;
     template = htmlTemplate;
@@ -74,19 +78,29 @@ if (isProd) {
 const render =  async (ctx, next) => {
     ctx.set("Content-Type", "text/html");
 
+    let scripts = '';
     let context = {
-      currURL: ctx.url
+      currURL: ctx.url,
+      modules: []
     };
 
     let  entry = await serverEntry(context);
     let  html =  await ReactDOMServer.renderToString(entry);
+
+    if (isProd) {
+      let bundles = getBundles(loadableJson, context.modules);
+      scripts = bundles.map(bundle => {
+        return `<script src="/dist/${bundle.file}"></script>`
+      }).join('\n');
+    }
 
     if (context.url) {
       ctx.redirect(context.url);
     } else {
       await ctx.render('index', {
         root: html,
-        state: context.state
+        state: context.state,
+        scripts: scripts
       });
     }
 }
@@ -100,6 +114,14 @@ app.use(router.routes()).use(router.allowedMethods())
 
 
 
-app.listen(port, () => {
-  console.log(chalk.green(`\n ✈️ ✈️ server listening on ${port}, open http://localhost:${port} in your browser`));
-});
+if (isProd) {
+  Loadable.preloadAll().then(() => {
+    app.listen(port, () => {
+      console.log(chalk.green(`\n ✈️ ✈️ server listening on ${port}, open http://localhost:${port} in your browser`));
+    });
+  })
+} else {
+  app.listen(port, () => {
+    console.log(chalk.green(`\n ✈️ ✈️ server listening on ${port}, open http://localhost:${port} in your browser`));
+  });
+}
